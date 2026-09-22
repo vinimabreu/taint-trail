@@ -1,0 +1,11 @@
+name: Unresolvable action
+on:
+  issues:
+    types: [opened]
+jobs:
+  use:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: someone/not-vendored@v3
+        with:
+          text: ${{ github.event.issue.title }}

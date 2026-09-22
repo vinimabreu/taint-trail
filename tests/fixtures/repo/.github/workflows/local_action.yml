@@ -1,0 +1,11 @@
+name: Local action
+on:
+  issues:
+    types: [opened]
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/greet
+        with:
+          who: ${{ github.event.issue.title }}

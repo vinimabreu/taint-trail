@@ -1,0 +1,11 @@
+name: Path that climbs out of the actions directory
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  climb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: a/b/../../../outside@v1
+        with:
+          x: ${{ github.event.comment.body }}

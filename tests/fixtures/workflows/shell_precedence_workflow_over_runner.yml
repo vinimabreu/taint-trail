@@ -1,0 +1,14 @@
+name: Workflow default shell wins over the Windows runner default
+on:
+  issue_comment:
+    types: [created]
+defaults:
+  run:
+    shell: bash
+jobs:
+  j:
+    runs-on: windows-latest
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: eval "$BODY"

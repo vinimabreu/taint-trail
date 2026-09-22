@@ -1,0 +1,13 @@
+name: printf with the marker in the format string
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          printf 'x<<EOF\n%s\nEOF\n' "$BODY" >> "$GITHUB_OUTPUT"

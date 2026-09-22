@@ -1,0 +1,15 @@
+name: Three echoes, single-quoted marker
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          echo 'x<<EOF' >> "$GITHUB_OUTPUT"
+          echo "$BODY" >> "$GITHUB_OUTPUT"
+          echo 'EOF' >> "$GITHUB_OUTPUT"

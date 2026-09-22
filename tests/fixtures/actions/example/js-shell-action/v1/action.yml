@@ -1,0 +1,12 @@
+name: Shell echo
+description: Echoes a message through a shell.
+inputs:
+  message:
+    description: Message to echo.
+    required: true
+outputs:
+  echoed:
+    description: What the shell printed.
+runs:
+  using: node20
+  main: dist/index.js

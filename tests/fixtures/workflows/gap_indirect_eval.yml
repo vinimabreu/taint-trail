@@ -1,0 +1,13 @@
+name: Documented gap, eval reached through a variable
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          CMD=eval
+          $CMD "$BODY"

@@ -1,0 +1,13 @@
+name: JavaScript action sets an undeclared output, then run
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    steps:
+      - id: x
+        uses: example/js-undeclared-output@v1
+        env:
+          HELPER_PROMPT: ${{ github.event.comment.body }}
+      - run: echo ${{ steps.x.outputs.secret }}

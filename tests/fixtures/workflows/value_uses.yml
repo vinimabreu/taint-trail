@@ -1,0 +1,20 @@
+name: Every value use
+on:
+  issue_comment:
+    types: [created]
+env:
+  BODY: ${{ github.event.comment.body }}
+jobs:
+  values:
+    runs-on: ubuntu-latest
+    steps:
+      - name: quoted
+        run: run-tool --prompt "$BODY"
+      - name: unquoted
+        run: run-tool --prompt $BODY
+      - name: braces
+        run: run-tool --prompt "${BODY}"
+      - name: echo
+        run: echo "$BODY"
+      - name: default expansion
+        run: run-tool --prompt "${BODY:-none}"

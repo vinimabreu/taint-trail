@@ -1,0 +1,14 @@
+name: Target held in a variable assigned from the output file
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          OUT="$GITHUB_OUTPUT"
+          { echo "x<<EOF"; echo "$BODY"; echo "EOF"; } >> "$OUT"

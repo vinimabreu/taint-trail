@@ -1,0 +1,18 @@
+name: Composite with a JavaScript writer
+description: A composite step runs a Node script that appends to the output file.
+inputs:
+  prompt:
+    description: Text to relay.
+    required: true
+outputs:
+  result:
+    description: Whatever the script wrote.
+    value: ${{ steps.relay.outputs.result }}
+runs:
+  using: composite
+  steps:
+    - id: relay
+      shell: bash
+      env:
+        PROMPT: ${{ inputs.prompt }}
+      run: node "$GITHUB_ACTION_PATH/dist/index.js"

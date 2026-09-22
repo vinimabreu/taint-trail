@@ -1,0 +1,12 @@
+name: Documented gap, a redirect after deno run -
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    env:
+      BODY: ${{ github.event.comment.body }}
+    steps:
+      - run: echo "$BODY" | deno run - 2>&1
+      - run: echo "$BODY" | deno run - > out.txt

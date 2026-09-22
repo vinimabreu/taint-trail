@@ -1,0 +1,24 @@
+name: Matrix include built from a tainted job output
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  produce:
+    runs-on: ubuntu-latest
+    outputs:
+      m: ${{ steps.s.outputs.m }}
+    steps:
+      - id: s
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          D="d_$(openssl rand -hex 16)"
+          { echo "m<<$D"; echo "$BODY"; echo "$D"; } >> "$GITHUB_OUTPUT"
+  consume:
+    needs: produce
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include: ${{ fromJSON(needs.produce.outputs.m) }}
+    steps:
+      - run: echo ${{ matrix.x }}

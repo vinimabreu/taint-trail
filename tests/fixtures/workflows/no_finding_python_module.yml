@@ -1,0 +1,12 @@
+name: python -m with the variable in env only
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  j:
+    runs-on: ubuntu-latest
+    steps:
+      - id: s
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: python3 -m mytool

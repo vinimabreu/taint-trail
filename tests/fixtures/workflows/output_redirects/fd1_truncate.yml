@@ -1,0 +1,13 @@
+name: Single line, explicit stdout descriptor truncating
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          echo "x=$BODY" 1> "$GITHUB_OUTPUT"

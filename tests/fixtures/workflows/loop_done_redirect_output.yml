@@ -1,0 +1,12 @@
+on: issue_comment
+jobs:
+  j:
+    runs-on: ubuntu-latest
+    env:
+      BODY: ${{ github.event.comment.body }}
+    steps:
+      - id: s
+        run: |
+          for k in a b; do
+            echo "$k=$BODY"
+          done >> "$GITHUB_OUTPUT"

@@ -1,0 +1,12 @@
+name: Documented gap, bare deno and bun reading standard input
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    env:
+      BODY: ${{ github.event.comment.body }}
+    steps:
+      - run: echo "$BODY" | deno
+      - run: echo "$BODY" | bun -

@@ -1,0 +1,11 @@
+name: Undeclared output
+description: Declares one output and sets another one at runtime.
+inputs:
+  prompt:
+    description: Text.
+outputs:
+  declared:
+    description: The output the manifest admits to.
+runs:
+  using: node20
+  main: dist/index.js

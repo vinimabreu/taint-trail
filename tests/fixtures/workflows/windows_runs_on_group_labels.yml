@@ -1,0 +1,13 @@
+name: runs-on mapping with a windows label
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  win:
+    runs-on:
+      group: my-group
+      labels: [windows]
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: Invoke-Expression $env:BODY

@@ -1,0 +1,8 @@
+name: Main climbs
+description: runs.main points outside the action directory and must never be read.
+inputs:
+  x:
+    description: Text.
+runs:
+  using: node20
+  main: ../../../../outside/leak/leak.js

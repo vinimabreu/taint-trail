@@ -1,0 +1,13 @@
+name: Composite action whose JavaScript writes the output file, then run
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    steps:
+      - id: x
+        uses: example/composite-js-output@v1
+        with:
+          prompt: ${{ github.event.comment.body }}
+      - run: eval "${{ steps.x.outputs.result }}"

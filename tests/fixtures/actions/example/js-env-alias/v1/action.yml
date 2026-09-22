@@ -1,0 +1,11 @@
+name: Env alias
+description: Reads the environment through a local alias of process.env.
+inputs:
+  prompt:
+    description: Text.
+outputs:
+  r:
+    description: The relayed text.
+runs:
+  using: node20
+  main: dist/index.js

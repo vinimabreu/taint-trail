@@ -1,0 +1,11 @@
+name: Single-quoted reference expanded by envsubst into a shell
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  sub:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: echo 'echo $BODY' | envsubst | bash

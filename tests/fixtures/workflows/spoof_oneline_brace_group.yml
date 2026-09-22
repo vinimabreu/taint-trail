@@ -1,0 +1,13 @@
+name: Spoofable output, one-line brace group
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          { echo "body<<EOF"; echo "$BODY"; echo "EOF"; } >> "$GITHUB_OUTPUT"

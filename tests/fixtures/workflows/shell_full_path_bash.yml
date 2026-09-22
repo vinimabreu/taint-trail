@@ -1,0 +1,12 @@
+name: Step shell given as a full path to bash
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  j:
+    runs-on: ubuntu-latest
+    steps:
+      - shell: /bin/bash -e {0}
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: eval "$BODY"

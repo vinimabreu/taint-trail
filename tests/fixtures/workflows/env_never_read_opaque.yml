@@ -1,0 +1,12 @@
+name: Defined, forgotten, but an opaque action inherits it
+on:
+  issues:
+    types: [opened]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ISSUE_TITLE: ${{ github.event.issue.title }}
+    steps:
+      - uses: someone/not-vendored@v3
+      - run: echo "nothing reads the title by name"

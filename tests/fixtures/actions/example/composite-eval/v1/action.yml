@@ -1,0 +1,13 @@
+name: Composite eval
+description: Runs the command it is given.
+inputs:
+  command:
+    description: Command to run.
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        CMD: ${{ inputs.command }}
+      run: eval "$CMD"

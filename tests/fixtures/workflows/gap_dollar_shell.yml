@@ -1,0 +1,15 @@
+name: Documented gap, shell reached through a variable
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: $SHELL -c "$BODY"
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          "$(command -v bash)" -c "$BODY"

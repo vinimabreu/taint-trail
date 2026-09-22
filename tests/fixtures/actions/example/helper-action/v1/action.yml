@@ -1,0 +1,21 @@
+name: Helper
+description: Runs the helper CLI with a prompt supplied by the caller.
+inputs:
+  prompt:
+    description: The prompt to send to the helper.
+    required: true
+  model:
+    description: Model name passed through to the CLI.
+    default: default-model
+runs:
+  using: composite
+  steps:
+    - name: Install the helper CLI
+      shell: bash
+      run: npm install --global helper-cli@1
+    - name: Run the helper
+      shell: bash
+      env:
+        HELPER_PROMPT: ${{ inputs.prompt }}
+        HELPER_MODEL: ${{ inputs.model }}
+      run: bash "${{ github.action_path }}/scripts/run-helper.sh"

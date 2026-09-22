@@ -1,0 +1,12 @@
+name: Cycle B
+description: Delegates back to A.
+inputs:
+  text:
+    description: Passed through.
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: example/cycle-a@v1
+      with:
+        text: ${{ inputs.text }}

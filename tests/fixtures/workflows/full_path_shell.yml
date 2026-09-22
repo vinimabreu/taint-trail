@@ -1,0 +1,10 @@
+on: issue_comment
+jobs:
+  j:
+    runs-on: ubuntu-latest
+    env:
+      BODY: ${{ github.event.comment.body }}
+    steps:
+      - run: /bin/bash -c "$BODY"
+      - run: echo "$BODY" | /bin/sh
+      - run: /usr/bin/python3 -c "import os; os.system(os.environ[\"X\"])" "$BODY"

@@ -1,0 +1,12 @@
+name: Script climbs
+description: Invokes a script outside the action directory; it must never be read.
+inputs:
+  x:
+    description: Text.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        HOME: ${{ inputs.x }}
+      run: bash "$GITHUB_ACTION_PATH/../../../../outside/leak/leak.sh"

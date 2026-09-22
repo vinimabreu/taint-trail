@@ -1,0 +1,13 @@
+name: Group piped into sudo tee -a
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          { echo "x<<EOF"; echo "$BODY"; echo "EOF"; } | sudo tee -a "$GITHUB_OUTPUT"

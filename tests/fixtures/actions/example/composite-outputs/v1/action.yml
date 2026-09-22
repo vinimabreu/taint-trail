@@ -1,0 +1,24 @@
+name: Composite outputs
+description: Re-exports its input as an output.
+inputs:
+  text:
+    description: Text to export.
+    required: true
+outputs:
+  text:
+    description: The same text.
+    value: ${{ steps.export.outputs.text }}
+runs:
+  using: composite
+  steps:
+    - id: export
+      shell: bash
+      env:
+        TEXT: ${{ inputs.text }}
+      run: |
+        delimiter="$(openssl rand -hex 16)"
+        {
+          echo "text<<${delimiter}"
+          echo "$TEXT"
+          echo "${delimiter}"
+        } >> "$GITHUB_OUTPUT"

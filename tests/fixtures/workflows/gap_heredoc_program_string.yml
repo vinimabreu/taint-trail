@@ -1,0 +1,14 @@
+name: Documented gap, a program string naming the variable on a heredoc line
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    env:
+      BODY: ${{ github.event.comment.body }}
+    steps:
+      - run: |
+          cat <<EOF | python3 -c 'import os; os.system(os.environ["BODY"])'
+          hello
+          EOF

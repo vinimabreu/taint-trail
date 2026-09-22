@@ -1,0 +1,11 @@
+name: Windows runner, no shell given
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  win:
+    runs-on: windows-latest
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: Invoke-Expression $env:BODY

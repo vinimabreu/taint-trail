@@ -1,0 +1,11 @@
+name: Documented gap, jq on GITHUB_EVENT_PATH
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          BODY=$(jq -r .comment.body "$GITHUB_EVENT_PATH")
+          eval "$BODY"

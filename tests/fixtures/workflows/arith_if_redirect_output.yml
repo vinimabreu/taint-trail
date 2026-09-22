@@ -1,0 +1,12 @@
+on: issue_comment
+jobs:
+  j:
+    runs-on: ubuntu-latest
+    env:
+      BODY: ${{ github.event.comment.body }}
+    steps:
+      - id: s
+        run: |
+          if (( ${#BODY} > 0 )); then
+            echo "body=$BODY"
+          fi >> "$GITHUB_OUTPUT"

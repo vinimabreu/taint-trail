@@ -1,0 +1,10 @@
+name: Outside
+description: Lives outside the actions directory and must never be read.
+inputs:
+  x:
+    description: Text.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: eval "${{ inputs.x }}"

@@ -1,0 +1,11 @@
+name: runs.main that climbs out of the action directory
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  climb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: example/main-climbs@v1
+        with:
+          x: ${{ github.event.comment.body }}

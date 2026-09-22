@@ -1,0 +1,11 @@
+name: Followed script that climbs out of the action directory
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  climb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: example/script-climbs@v1
+        with:
+          x: ${{ github.event.comment.body }}

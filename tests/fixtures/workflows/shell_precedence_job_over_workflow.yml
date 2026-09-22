@@ -1,0 +1,17 @@
+name: Job default shell wins over the workflow default
+on:
+  issue_comment:
+    types: [created]
+defaults:
+  run:
+    shell: pwsh
+jobs:
+  j:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: eval "$BODY"

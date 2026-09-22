@@ -1,0 +1,17 @@
+name: Documented gap, here-string into a shell or interpreter
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: bash <<< "$BODY"
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: sh -s <<< "$BODY"
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: python3 - <<< "$BODY"

@@ -1,0 +1,13 @@
+name: Composite echo
+description: Prints its input as a value.
+inputs:
+  text:
+    description: Text to print.
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        TEXT: ${{ inputs.text }}
+      run: echo "$TEXT"

@@ -1,0 +1,14 @@
+name: Random delimiter into GITHUB_ENV, then a later step evals the variable
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          D="d_$(openssl rand -hex 16)"
+          { echo "TITLE<<$D"; echo "$BODY"; echo "$D"; } >> "$GITHUB_ENV"
+      - run: eval "$TITLE"

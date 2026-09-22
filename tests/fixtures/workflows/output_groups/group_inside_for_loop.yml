@@ -1,0 +1,13 @@
+name: Group inside a one-line for loop
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          for k in a b; do { echo "x<<EOF"; echo "$BODY"; echo "EOF"; } >> "$GITHUB_OUTPUT"; done

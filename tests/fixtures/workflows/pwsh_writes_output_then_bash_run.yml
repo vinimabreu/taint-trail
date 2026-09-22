@@ -1,0 +1,14 @@
+name: Windows default shell writes the output file, bash reads it
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  relay:
+    runs-on: windows-latest
+    steps:
+      - id: w
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: '"r=$env:BODY" >> $env:GITHUB_OUTPUT'
+      - shell: bash
+        run: eval "${{ steps.w.outputs.r }}"

@@ -1,0 +1,13 @@
+name: Deprecated set-output, unquoted
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          echo ::set-output name=x::$BODY

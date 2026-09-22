@@ -1,0 +1,13 @@
+name: Documented gap, env -S, busybox sh and su -c
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    env:
+      BODY: ${{ github.event.comment.body }}
+    steps:
+      - run: echo "$BODY" | env -S bash
+      - run: echo "$BODY" | busybox sh
+      - run: su -c "$BODY"

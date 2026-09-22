@@ -1,0 +1,13 @@
+name: printf after a test and &&
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          test -n "$BODY" && printf "x<<EOF\n%%s\nEOF\n" "$BODY" >> "$GITHUB_OUTPUT"

@@ -1,0 +1,13 @@
+name: Taint through a composite action's outputs
+on:
+  issues:
+    types: [opened]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - id: export
+        uses: example/composite-outputs@v1
+        with:
+          text: ${{ github.event.issue.body }}
+      - run: eval "${{ steps.export.outputs.text }}"

@@ -1,0 +1,11 @@
+name: Moved into an action that only echoes
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: example/composite-echo@v1
+        with:
+          text: ${{ github.event.comment.body }}

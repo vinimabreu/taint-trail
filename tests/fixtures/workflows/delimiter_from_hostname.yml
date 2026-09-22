@@ -1,0 +1,13 @@
+name: Delimiter built from the hostname is not random
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          D="EOF_$(head -c 4 /etc/hostname)"
+          { echo "body<<$D"; echo "$BODY"; echo "$D"; } >> "$GITHUB_OUTPUT"

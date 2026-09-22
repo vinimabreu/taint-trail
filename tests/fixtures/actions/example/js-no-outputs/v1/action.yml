@@ -1,0 +1,8 @@
+name: No outputs declared
+description: Sets an output the manifest never declares.
+inputs:
+  prompt:
+    description: Text.
+runs:
+  using: node20
+  main: dist/index.js

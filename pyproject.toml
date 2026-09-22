@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "taint-trail"
+version = "0.1.0"
+description = "Follows an untrusted value through a GitHub Actions workflow after it leaves the run: block. Through env:, with:, step outputs and into the called action, until it dies in an argv array, reaches a shell, spoofs $GITHUB_OUTPUT, or becomes opaque with the reason named."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Vinicius Pereira" }]
+keywords = [
+    "github actions",
+    "script injection",
+    "taint analysis",
+    "static analysis",
+    "ci security",
+    "workflow security",
+    "supply chain",
+    "composite action",
+    "github output",
+]
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Security",
+    "Typing :: Typed",
+]
+dependencies = ["PyYAML>=6"]
+
+[project.urls]
+Homepage = "https://github.com/vinimabreu/taint-trail"
+Source = "https://github.com/vinimabreu/taint-trail"
+
+[project.scripts]
+taint-trail = "taint_trail.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "types-PyYAML"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/taint_trail"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "examples", "tests"]
+extend-exclude = ["tests/fixtures"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RET", "PIE"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+files = ["src", "examples", "tests"]
+exclude = ["tests/fixtures"]

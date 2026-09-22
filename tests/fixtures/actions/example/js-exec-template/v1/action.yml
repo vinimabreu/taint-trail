@@ -1,0 +1,9 @@
+name: Exec template
+description: Builds a command string from its input.
+inputs:
+  directory:
+    description: Directory to inspect.
+    required: true
+runs:
+  using: node20
+  main: dist/index.js

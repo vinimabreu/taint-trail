@@ -1,0 +1,13 @@
+name: Group in the else branch of a one-line if
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          if false; then :; else { echo "x<<EOF"; echo "$BODY"; echo "EOF"; } >> "$GITHUB_OUTPUT"; fi

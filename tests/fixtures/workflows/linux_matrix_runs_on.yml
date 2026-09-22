@@ -1,0 +1,14 @@
+name: runs-on from a matrix that lists only Linux runners
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  linux:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: eval "$BODY"

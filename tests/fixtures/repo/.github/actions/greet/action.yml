@@ -1,0 +1,13 @@
+name: Greet
+description: Prints a greeting.
+inputs:
+  who:
+    description: Name to greet.
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        WHO: ${{ inputs.who }}
+      run: echo "hello $WHO"

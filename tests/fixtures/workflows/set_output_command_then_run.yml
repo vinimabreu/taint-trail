@@ -1,0 +1,13 @@
+name: Deprecated set-output command, then run
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    steps:
+      - id: s
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: echo "::set-output name=x::$BODY"
+      - run: echo ${{ steps.s.outputs.x }}

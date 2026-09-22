@@ -1,0 +1,14 @@
+name: runs-on from a matrix that mixes Linux and Windows runners
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  mixed:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: echo "$BODY"

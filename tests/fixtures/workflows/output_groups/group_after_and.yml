@@ -1,0 +1,13 @@
+name: Group after a test and &&
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          [ -n "$BODY" ] && { echo "x<<EOF"; echo "$BODY"; echo "EOF"; } >> "$GITHUB_OUTPUT"

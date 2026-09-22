@@ -1,0 +1,11 @@
+name: Expression written straight to the output file, then run
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    steps:
+      - id: s
+        run: echo "x=${{ github.event.comment.body }}" >> $GITHUB_OUTPUT
+      - run: echo ${{ steps.s.outputs.x }}

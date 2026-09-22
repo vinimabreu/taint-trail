@@ -1,0 +1,11 @@
+name: Interpreter program string names the variable without a dollar
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  py:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: python3 -c "import os; os.system('echo ' + os.environ['BODY'])"

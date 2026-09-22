@@ -1,0 +1,11 @@
+name: Docker echo
+description: Echoes its input from inside a container.
+inputs:
+  text:
+    description: Text to echo.
+    required: true
+runs:
+  using: docker
+  image: Dockerfile
+  args:
+    - ${{ inputs.text }}

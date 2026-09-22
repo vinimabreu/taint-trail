@@ -1,0 +1,12 @@
+name: working-directory that climbs out of the repository
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  climb:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          HOME: ${{ github.event.comment.body }}
+        working-directory: ../outside/leak
+        run: bash leak.sh

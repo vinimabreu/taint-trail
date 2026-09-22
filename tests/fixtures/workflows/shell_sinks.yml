@@ -1,0 +1,30 @@
+name: Every shell sink
+on:
+  issue_comment:
+    types: [created]
+env:
+  BODY: ${{ github.event.comment.body }}
+jobs:
+  sinks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: eval
+        run: eval "$BODY"
+      - name: bash -c
+        run: bash -c "$BODY"
+      - name: sh -c
+        run: sh -c "echo $BODY"
+      - name: source
+        run: source "$BODY"
+      - name: dot
+        run: . "$BODY"
+      - name: xargs
+        run: echo "$BODY" | xargs rm -f
+      - name: pipe to sh
+        run: printf '%s' "$BODY" | sh
+      - name: pipe to bash
+        run: echo "$BODY" | bash
+      - name: command position
+        run: $BODY --help
+      - name: env expression in run
+        run: echo ${{ env.BODY }}

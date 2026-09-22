@@ -1,0 +1,12 @@
+name: JavaScript output
+description: Echoes its input back as an output and runs a tool with an argv array.
+inputs:
+  prompt:
+    description: Text to relay.
+    required: true
+outputs:
+  result:
+    description: The same text, set with core.setOutput.
+runs:
+  using: node20
+  main: dist/index.js

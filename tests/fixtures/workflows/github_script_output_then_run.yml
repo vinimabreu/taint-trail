@@ -1,0 +1,15 @@
+name: github-script setOutput, then run
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    steps:
+      - id: g
+        uses: actions/github-script@v7
+        env:
+          BODY: ${{ github.event.comment.body }}
+        with:
+          script: core.setOutput('x', process.env.BODY)
+      - run: eval "${{ steps.g.outputs.x }}"

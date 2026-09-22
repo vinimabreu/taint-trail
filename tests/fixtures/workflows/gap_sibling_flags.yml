@@ -1,0 +1,16 @@
+name: Documented gap, sibling program-string flags
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    env:
+      BODY: ${{ github.event.comment.body }}
+    steps:
+      - run: perl -E "$BODY"
+      - run: node -p "$BODY"
+      - run: node --eval "$BODY"
+      - run: node --print "$BODY"
+      - run: bun --eval "$BODY"
+      - run: bash -ce "$BODY"

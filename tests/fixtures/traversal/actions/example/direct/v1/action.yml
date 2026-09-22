@@ -1,0 +1,10 @@
+name: Direct
+description: Echoes its input.
+inputs:
+  x:
+    description: Text.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: echo "${{ inputs.x }}"

@@ -1,0 +1,14 @@
+name: Descriptor opened with exec, then a group written to it
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          exec 5>> "$GITHUB_OUTPUT"
+          { echo "x<<EOF"; echo "$BODY"; echo "EOF"; } >&5

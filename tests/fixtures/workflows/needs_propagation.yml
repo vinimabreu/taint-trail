@@ -1,0 +1,25 @@
+name: Taint across jobs
+on:
+  issues:
+    types: [opened]
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      title: ${{ steps.grab.outputs.title }}
+    steps:
+      - id: grab
+        env:
+          TITLE: ${{ github.event.issue.title }}
+        run: |
+          delimiter="$(openssl rand -hex 16)"
+          {
+            echo "title<<${delimiter}"
+            echo "$TITLE"
+            echo "${delimiter}"
+          } >> "$GITHUB_OUTPUT"
+  consume:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "${{ needs.prepare.outputs.title }}"

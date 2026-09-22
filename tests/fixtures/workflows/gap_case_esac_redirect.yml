@@ -1,0 +1,15 @@
+name: Documented gap, case block with the redirect on esac
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    steps:
+      - id: s
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          case "$RUNNER_OS" in
+            Linux) echo "body=$BODY";;
+          esac >> "$GITHUB_OUTPUT"

@@ -1,0 +1,11 @@
+name: Defined and forgotten
+on:
+  issues:
+    types: [opened]
+env:
+  ISSUE_TITLE: ${{ github.event.issue.title }}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "nothing reads the title"

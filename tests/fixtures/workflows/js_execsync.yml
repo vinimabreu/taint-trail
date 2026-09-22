@@ -1,0 +1,11 @@
+name: JavaScript action with execSync
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  echo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: example/js-shell-action@v1
+        with:
+          message: ${{ github.event.comment.body }}

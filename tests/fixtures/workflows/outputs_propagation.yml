@@ -1,0 +1,24 @@
+name: Taint through step outputs
+on:
+  issues:
+    types: [opened]
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          delimiter="$(openssl rand -hex 16)"
+          {
+            echo "command<<${delimiter}"
+            echo "$BODY"
+            echo "${delimiter}"
+          } >> "$GITHUB_OUTPUT"
+      - name: Use the parsed command
+        env:
+          COMMAND: ${{ steps.parse.outputs.command }}
+        run: echo "$COMMAND" | xargs run-tool
+      - name: Interpolate the parsed command
+        run: run-tool ${{ steps.parse.outputs.command }}

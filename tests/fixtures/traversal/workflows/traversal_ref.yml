@@ -1,0 +1,11 @@
+name: Ref that climbs out of the actions directory
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  climb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: example/direct@../../../outside
+        with:
+          x: ${{ github.event.comment.body }}

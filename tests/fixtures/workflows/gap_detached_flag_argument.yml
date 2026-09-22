@@ -1,0 +1,13 @@
+name: Documented gap, a detached flag argument, a digit flag or a bare dash-dash before stdin
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    env:
+      BODY: ${{ github.event.comment.body }}
+    steps:
+      - run: echo "$BODY" | node --require ts-node/register
+      - run: echo "$BODY" | ruby -W0 -
+      - run: echo "$BODY" | python3 --

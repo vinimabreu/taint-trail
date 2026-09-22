@@ -1,0 +1,12 @@
+name: bun -e names the variable
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  j:
+    runs-on: ubuntu-latest
+    steps:
+      - id: s
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: bun -e "console.log(process.env.BODY)"

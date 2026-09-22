@@ -1,0 +1,16 @@
+name: Moved, and died
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  helper:
+    if: contains(github.event.comment.body, '/helper')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the helper with the comment
+        env:
+          BODY: ${{ github.event.comment.body }}
+        uses: example/helper-action@v1
+        with:
+          prompt: ${{ env.BODY }}

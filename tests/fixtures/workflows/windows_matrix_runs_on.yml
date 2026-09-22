@@ -1,0 +1,14 @@
+name: runs-on from a matrix that lists only Windows runners
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  win:
+    strategy:
+      matrix:
+        os: [windows-latest, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: Invoke-Expression $env:BODY

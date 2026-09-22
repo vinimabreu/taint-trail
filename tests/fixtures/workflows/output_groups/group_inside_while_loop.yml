@@ -1,0 +1,15 @@
+name: Group inside a multi-line while loop
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          while read -r k; do
+            { echo "x<<EOF"; echo "$BODY"; echo "EOF"; } >> "$GITHUB_OUTPUT"
+          done < list.txt

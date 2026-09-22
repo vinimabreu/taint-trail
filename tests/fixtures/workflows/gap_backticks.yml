@@ -1,0 +1,12 @@
+name: Documented gap, backticks in command position
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          `echo "$BODY"`

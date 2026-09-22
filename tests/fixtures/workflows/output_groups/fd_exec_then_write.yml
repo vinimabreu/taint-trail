@@ -1,0 +1,16 @@
+name: Descriptor opened with exec, then written
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          exec 3>>"$GITHUB_OUTPUT"
+          echo "x<<EOF" >&3
+          echo "$BODY" >&3
+          echo "EOF" >&3

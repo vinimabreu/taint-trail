@@ -1,0 +1,16 @@
+on: issue_comment
+jobs:
+  j:
+    runs-on: ubuntu-latest
+    env:
+      BODY: ${{ github.event.comment.body }}
+    steps:
+      - id: s
+        run: |
+          (
+            echo "x<<EOF"
+            case "$RUNNER_OS" in
+              Linux) echo "$BODY";;
+            esac
+            echo "EOF"
+          ) >> "$GITHUB_OUTPUT"

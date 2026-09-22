@@ -1,0 +1,9 @@
+name: List target
+description: Lists a directory with execFile and an argv array.
+inputs:
+  target:
+    description: Directory to list.
+    required: true
+runs:
+  using: node20
+  main: dist/index.js

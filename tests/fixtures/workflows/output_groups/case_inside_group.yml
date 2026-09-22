@@ -1,0 +1,19 @@
+name: case statement inside the group
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          {
+            echo "x<<EOF"
+            case "$k" in
+              a) echo "$BODY";;
+            esac
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"

@@ -1,0 +1,12 @@
+name: Documented gap, one-line compound with the redirect on done
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    steps:
+      - id: s
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: for k in a b; do echo "$k=$BODY"; done >> "$GITHUB_OUTPUT"

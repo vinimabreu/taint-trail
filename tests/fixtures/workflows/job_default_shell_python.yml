@@ -1,0 +1,14 @@
+name: Job-level default shell is python
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  py:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: python
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: import os; os.system(os.environ['BODY'])

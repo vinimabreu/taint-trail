@@ -1,0 +1,11 @@
+name: Moved into an action that evals
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: example/composite-eval@v1
+        with:
+          command: ${{ github.event.comment.body }}

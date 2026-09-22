@@ -1,0 +1,17 @@
+name: Redirect written before the heredoc operator
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - id: parse
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          cat >> "$GITHUB_OUTPUT" <<EOF
+          x<<INNER
+          $BODY
+          INNER
+          EOF

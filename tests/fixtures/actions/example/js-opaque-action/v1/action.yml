@@ -1,0 +1,9 @@
+name: Write note
+description: Writes its input to a file.
+inputs:
+  note:
+    description: Text to persist.
+    required: true
+runs:
+  using: node20
+  main: dist/index.js

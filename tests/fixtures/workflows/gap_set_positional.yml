@@ -1,0 +1,13 @@
+name: Documented gap, set -- then "$@"
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          set -- $BODY
+          "$@"

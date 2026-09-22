@@ -1,0 +1,11 @@
+name: Composite cycle
+on:
+  issues:
+    types: [opened]
+jobs:
+  loop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: example/cycle-a@v1
+        with:
+          text: ${{ github.event.issue.title }}

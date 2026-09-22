@@ -1,0 +1,17 @@
+name: Python shell writes the output file, bash reads it
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    steps:
+      - id: w
+        shell: python
+        env:
+          BODY: ${{ github.event.comment.body }}
+        run: |
+          import os
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write("r=" + os.environ["BODY"] + "\n")
+      - run: eval "${{ steps.w.outputs.r }}"

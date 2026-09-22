@@ -1,0 +1,13 @@
+name: JavaScript action reads env through an alias, then run
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    steps:
+      - id: x
+        uses: example/js-env-alias@v1
+        env:
+          HELPER_PROMPT: ${{ github.event.comment.body }}
+      - run: echo ${{ steps.x.outputs.r }}

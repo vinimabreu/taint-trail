@@ -1,0 +1,14 @@
+name: Documented gap, wrapper with an option before the value in command position
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  gap:
+    runs-on: ubuntu-latest
+    env:
+      BODY: ${{ github.event.comment.body }}
+    steps:
+      - run: sudo -E "$BODY"
+      - run: timeout 30 "$BODY"
+      - run: nice "$BODY"
+      - run: env -i "$BODY"
