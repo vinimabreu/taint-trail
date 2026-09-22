@@ -9,3 +9,6 @@ build/
 *.egg-info/
 frames/
 .DS_Store
+
+# vendored fixture actions ship their dist/ on purpose
+!tests/fixtures/**/dist/
