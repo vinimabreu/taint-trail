@@ -8,15 +8,56 @@
 
 **An injection that moved is not an injection that was fixed.**
 
-The usual fix for `${{ github.event.comment.body }}` inside a `run:` block is to move the value into `env:`. That removes the template from the script, and it removes the finding from every scanner that looks for templates in scripts. It does not remove the value from the job. The variable is still there for a later line to `eval`, for a composite action to forward through `with:`, for a shell script to hand to a Node wrapper. Whether the injection is gone depends entirely on what happens after the move.
+```yaml
+# Before. A template-injection check flags this line.
+- run: helper-cli --prompt "${{ github.event.comment.body }}"
 
-`taint-trail` follows the value after the move. It is a deterministic static analyser for GitHub Actions workflows: it starts at every untrusted expression, follows it through `env:`, `with:`, step outputs, job outputs and into the called action, recursively, and ends each chain with one of five verdicts. The value reached a shell (`SHELL`), it can spoof `$GITHUB_OUTPUT` (`SPOOF`), a JavaScript action looks like it builds a command string (`SUSPECT`), it died as a discrete argument with no shell in between (`DIES`), or the tool could not follow and says exactly where it stopped and why (`UNKNOWN`).
+# After. It does not, because there is no template left in the script.
+- env:
+    BODY: ${{ github.event.comment.body }}
+  run: helper-cli --prompt "$BODY"
+```
 
-One runtime dependency (PyYAML). No network, no model, no key. The suite runs offline against vendored fixtures.
+The second version is safe only if nothing downstream re-parses `$BODY`. A later `eval "$BODY"`, a composite action that forwards it through `with:`, a Node wrapper that builds a command string out of it: none of these is a template in a script, so none of them is reported, and the job is as exposed as before.
+
+`taint-trail` follows the value after the move. It is a deterministic static analyser: it starts at every untrusted expression, follows it through `env:`, `with:`, step outputs, job outputs and into the called action, recursively, and ends each chain with a verdict and a file and line at every hop. One runtime dependency (PyYAML). No network, no model, no key.
 
 ![A comment body moved into env: and handed to a composite action, followed hop by hop to a spawn with no shell, then the same move ending in eval](assets/taint-trail.gif)
 
 Every line of tool output in that animation is a verbatim capture: `python examples/hero_chain.py` for the trail, and the two fixtures it names under `tests/fixtures/workflows/` for the classic and the moved-not-fixed cases.
+
+## Quickstart
+
+```bash
+pip install "git+https://github.com/vinimabreu/taint-trail@5c817f46f1f89189cf2e2dc233b3412362a5c614"
+cd your-repository
+taint-trail .
+```
+
+From the root of a repository it scans `.github/workflows`. On a workflow whose fix moved the comment body into `env:` and then evaluated it:
+
+```text
+github.event.comment.body  [untrusted]  .github/workflows/helper.yml / job helper
+  .github/workflows/helper.yml:12  env BODY
+  .github/workflows/helper.yml:15  run  (eval "$BODY")
+  SHELL: eval re-parses the value as shell
+
+1 chain(s): SHELL 1  SPOOF 0  SUSPECT 0  DIES 0  UNKNOWN 0
+```
+
+Exit code 1 when any chain ends in `SHELL` or `SPOOF`, 0 otherwise. `--strict` also fails on `SUSPECT` and `UNKNOWN`, `--json` prints one machine-readable object, and `--actions-dir` points at local copies of the actions your workflows call, so a chain can continue inside them. There is no PyPI release; the install is pinned to a commit.
+
+## Five verdicts
+
+| Verdict | What happened to the value | Exit |
+|---|---|---|
+| `SHELL` | Re-parsed as code: expanded straight into `run:`, or reached `eval`, `bash -c`, `source`, a pipe into a shell or an interpreter, or the command position of a line | 1 |
+| `SPOOF` | Written to `$GITHUB_OUTPUT` or `$GITHUB_ENV` in a way that lets it add keys: one line, a static heredoc delimiter, or `::set-output` | 1 |
+| `SUSPECT (heuristic)` | A JavaScript action looks like it builds a command string with it | 0, or 1 with `--strict` |
+| `DIES` | Ended as a value: an argument, an `echo`, one element of an argv array, a random heredoc delimiter | 0 |
+| `UNKNOWN: <reason>` | The tool could not follow, and says where it stopped and why instead of guessing | 0, or 1 with `--strict` |
+
+The exact patterns behind each verdict are under [Verdicts in detail](#verdicts-in-detail).
 
 ## What zizmor does, and what this does
 
@@ -56,13 +97,67 @@ Seven hops, then the verdict, with the word `heuristic` on it because the last f
 
 That output is `python examples/hero_chain.py`, offline, from the fixtures in this repository. The test suite compares the block above with the demo output byte for byte.
 
-## Verdicts
+## Run it in CI
 
-- `SHELL`: the value is re-parsed as code. Either the expression was expanded into the script before it ran, or a tainted variable reached `eval`, `bash -c`, `sh -c`, `source`, `. `, `xargs`, `| sh`, `| bash`, the command position of a line (including after `env FOO=1`, an inline assignment, `nohup`, `time`, `!`, `if`/`while` or a pipe), an interpreter's program string (`python -c`, `python3 -c`, `node -e`, `ruby -e`, `perl -e`, `bun -e`, `php -r`, `deno eval`), an interpreter's standard input through a pipe or a heredoc (`| python3`, `| node -`, `| php`, `| deno run -`, `python - <<EOF`, with any redirect after python, node, ruby, perl, php or bun, a short or long flag written as one word, `-W`, `-X` or `-r` with their argument, or a further pipe stage after the interpreter, as in `| node --input-type=module` and `| python3 | tee log`; an interpreter given a script file is not counted), a process substitution given to a shell or interpreter (`bash <(echo "$V")`), or a `github-script` block. The shell or interpreter is matched by its basename, so a full path (`/bin/bash -c`), an `env` wrapper (`/usr/bin/env bash -c`) and `sudo` all count; `|&` is a pipe like `|`. Exit 1.
-- `SPOOF`: the value is written to `$GITHUB_OUTPUT` or `$GITHUB_ENV` in a way that lets it add keys. One-line `echo "k=$V" >> "$GITHUB_OUTPUT"` (a newline in the value starts a new key), a heredoc block whose delimiter is a fixed word like `EOF` (a value containing that word closes the block early), or the deprecated `::set-output name=k::$V` command, which the runner still honours. The block is recognised whether it spans several lines, sits inside a `{ ...; }` or `( ...; )` group in any layout (one line, opening with content, closing on the last body line, nested, after `&&`, inside `if`, `for` or `while`, with a `case` pattern inside a subshell, or closing with a `\`, `|` or `&&` continuation on the closing line), sits inside a `for`/`while`/`until`/`if` block spanning more than one line whose `done`/`fi` line carries the redirect (an arithmetic `for ((...))` or `(( ))` condition included), or is written by three separate `echo` lines. The target is any redirect or tee form (`>>`, `>`, `1>>`, `2>>`, `&>>`, `&>`, `>|`, `2>&1 >>`, `| tee -a`, `| tee --append`, `| sudo tee -a`), a variable assigned the file's path (`OUT="$GITHUB_OUTPUT"` then `>> "$OUT"`), or a descriptor opened on it (`exec 3>>"$GITHUB_OUTPUT"` then `>&3`). A delimiter built from `openssl rand`, `$RANDOM`, `uuidgen`, `/dev/urandom` or `mktemp` is accepted; `$$`, `head -c` on a file or a clock is not proven random and the write ends as `UNKNOWN`. Exit 1.
-- `SUSPECT (heuristic)`: a JavaScript action or script contains `shell: true`, `execSync(`, or `exec(` with a template literal that interpolates the input. No JavaScript is parsed; this is a pattern match and says so.
-- `DIES`: the value ended as a value. Quoted or unquoted expansion into an argument, `echo`, a write to `$GITHUB_OUTPUT` under a random heredoc delimiter, an argv array in `spawn`/`execFile` (labelled `heuristic` when the evidence is JavaScript), a value piped only into a fixed single-quoted program that reads standard input (`echo "$V" | perl -pe 's/x//'`, `| python3 -c '...sys.stdin...'`, the sanitiser idiom), or an environment variable that nothing in scope reads by name.
-- `UNKNOWN: <reason>`: the tool stopped and refuses to guess. The reason is always concrete: the action is not available locally, it is a docker action, the JavaScript matched no pattern, `exec(` could not be tied to the input, a script could not be located, a delimiter could not be proven random, a program string (`python -c`, `bash -c`, `php -r`, `deno eval`, the input of `envsubst`) names the variable without the outer shell expanding it (also when the value was piped into that program from the left, on a line that does not open a heredoc), the value went into `$GITHUB_ENV` under a random delimiter and later steps are not tracked, the step's shell is `pwsh`, `python` or `cmd`, `runs-on` is an expression that may select a Windows runner, a file the tool would open resolves outside its root, the depth limit was reached, or a cycle was found.
+```yaml
+name: taint-trail
+on:
+  pull_request:
+    paths: [".github/workflows/**", ".github/actions/**"]
+permissions:
+  contents: read
+jobs:
+  taint-trail:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - run: pip install "git+https://github.com/vinimabreu/taint-trail@5c817f46f1f89189cf2e2dc233b3412362a5c614"
+      - run: taint-trail .
+```
+
+The job needs nothing beyond `contents: read`. A chain that enters a third-party action ends as `UNKNOWN` unless the action is available locally: add `--fetch --actions-dir .taint-trail-actions` to shallow-clone each `owner/repo@ref` first (the files are read, never executed), or keep vendored copies in the repository and point `--actions-dir` at them.
+
+## Verdicts in detail
+
+<details>
+<summary><code>SHELL</code>: the value is re-parsed as code</summary>
+
+`SHELL`: the value is re-parsed as code. Either the expression was expanded into the script before it ran, or a tainted variable reached `eval`, `bash -c`, `sh -c`, `source`, `. `, `xargs`, `| sh`, `| bash`, the command position of a line (including after `env FOO=1`, an inline assignment, `nohup`, `time`, `!`, `if`/`while` or a pipe), an interpreter's program string (`python -c`, `python3 -c`, `node -e`, `ruby -e`, `perl -e`, `bun -e`, `php -r`, `deno eval`), an interpreter's standard input through a pipe or a heredoc (`| python3`, `| node -`, `| php`, `| deno run -`, `python - <<EOF`, with any redirect after python, node, ruby, perl, php or bun, a short or long flag written as one word, `-W`, `-X` or `-r` with their argument, or a further pipe stage after the interpreter, as in `| node --input-type=module` and `| python3 | tee log`; an interpreter given a script file is not counted), a process substitution given to a shell or interpreter (`bash <(echo "$V")`), or a `github-script` block. The shell or interpreter is matched by its basename, so a full path (`/bin/bash -c`), an `env` wrapper (`/usr/bin/env bash -c`) and `sudo` all count; `|&` is a pipe like `|`. Exit 1.
+
+</details>
+
+<details>
+<summary><code>SPOOF</code>: the value can add keys to the runner file</summary>
+
+`SPOOF`: the value is written to `$GITHUB_OUTPUT` or `$GITHUB_ENV` in a way that lets it add keys. One-line `echo "k=$V" >> "$GITHUB_OUTPUT"` (a newline in the value starts a new key), a heredoc block whose delimiter is a fixed word like `EOF` (a value containing that word closes the block early), or the deprecated `::set-output name=k::$V` command, which the runner still honours. The block is recognised whether it spans several lines, sits inside a `{ ...; }` or `( ...; )` group in any layout (one line, opening with content, closing on the last body line, nested, after `&&`, inside `if`, `for` or `while`, with a `case` pattern inside a subshell, or closing with a `\`, `|` or `&&` continuation on the closing line), sits inside a `for`/`while`/`until`/`if` block spanning more than one line whose `done`/`fi` line carries the redirect (an arithmetic `for ((...))` or `(( ))` condition included), or is written by three separate `echo` lines. The target is any redirect or tee form (`>>`, `>`, `1>>`, `2>>`, `&>>`, `&>`, `>|`, `2>&1 >>`, `| tee -a`, `| tee --append`, `| sudo tee -a`), a variable assigned the file's path (`OUT="$GITHUB_OUTPUT"` then `>> "$OUT"`), or a descriptor opened on it (`exec 3>>"$GITHUB_OUTPUT"` then `>&3`). A delimiter built from `openssl rand`, `$RANDOM`, `uuidgen`, `/dev/urandom` or `mktemp` is accepted; `$$`, `head -c` on a file or a clock is not proven random and the write ends as `UNKNOWN`. Exit 1.
+
+</details>
+
+<details>
+<summary><code>SUSPECT</code>: a JavaScript action looks like it builds a command string</summary>
+
+`SUSPECT (heuristic)`: a JavaScript action or script contains `shell: true`, `execSync(`, or `exec(` with a template literal that interpolates the input. No JavaScript is parsed; this is a pattern match and says so.
+
+</details>
+
+<details>
+<summary><code>DIES</code>: the value ended as a value</summary>
+
+`DIES`: the value ended as a value. Quoted or unquoted expansion into an argument, `echo`, a write to `$GITHUB_OUTPUT` under a random heredoc delimiter, an argv array in `spawn`/`execFile` (labelled `heuristic` when the evidence is JavaScript), a value piped only into a fixed single-quoted program that reads standard input (`echo "$V" | perl -pe 's/x//'`, `| python3 -c '...sys.stdin...'`, the sanitiser idiom), or an environment variable that nothing in scope reads by name.
+
+</details>
+
+<details>
+<summary><code>UNKNOWN</code>: the tool stopped, and says where and why</summary>
+
+`UNKNOWN: <reason>`: the tool stopped and refuses to guess. The reason is always concrete: the action is not available locally, it is a docker action, the JavaScript matched no pattern, `exec(` could not be tied to the input, a script could not be located, a delimiter could not be proven random, a program string (`python -c`, `bash -c`, `php -r`, `deno eval`, the input of `envsubst`) names the variable without the outer shell expanding it (also when the value was piped into that program from the left, on a line that does not open a heredoc), the value went into `$GITHUB_ENV` under a random delimiter and later steps are not tracked, the step's shell is `pwsh`, `python` or `cmd`, `runs-on` is an expression that may select a Windows runner, a file the tool would open resolves outside its root, the depth limit was reached, or a cycle was found.
+
+</details>
 
 Exit code is 1 when any chain from an untrusted source ends in `SHELL` or `SPOOF`, 0 otherwise. `--strict` also exits 1 on `SUSPECT` and `UNKNOWN`. Usage errors exit 2. A file that cannot be read or parsed (not UTF-8, not YAML, not a mapping, nested beyond what the parser handles) is reported on stderr and skipped; the exit code is 2 only when no file at all could be read, otherwise it follows the verdicts of the files that were. `github.event.inputs.*` and a top-level `inputs.*` (workflow_dispatch) are printed with the label `semi-trusted, not counted` and never affect the exit code: only someone who can already dispatch the workflow sets them.
 
@@ -99,7 +194,13 @@ Shell text is matched line by line with quotes and comments understood: single-q
 - Variables set through `$GITHUB_ENV` are not tracked into later steps. A random-delimiter write to `$GITHUB_ENV` therefore ends as `UNKNOWN`, not `DIES`; the single-line and static-delimiter forms are `SPOOF` regardless. `$GITHUB_PATH` is ignored.
 - Environment inheritance into JavaScript is followed only when the file names the variable: `process.env.X`, `process.env["X"]`, destructuring, or an alias such as `const env = process.env` followed by `env.X`. Environment inheritance into docker actions and into binaries is not followed.
 - Steps whose shell is `pwsh`, `powershell`, `python` or `cmd` are `UNKNOWN` when they mention a tainted variable; their outputs are still tainted when the script names the runner file. The shell is the step's own `shell:` (a full path such as `/bin/bash -e {0}` counts by its name), else the job's or the workflow's `defaults.run.shell`, else `pwsh` when `runs-on` names a `windows-*` label as a string, in a list, or in the `labels` of a `group` mapping. A `runs-on` that is an expression is resolved against the job's matrix: when every value the key can take (axis, `include`, `exclude`) is a non-Windows label, the job is analysed as bash; when any value is Windows, the matrix is itself an expression, the key does not exist, or the expression is not `matrix.*`, the default shell is undetermined and a tainted mention is `UNKNOWN` saying so. A `self-hosted` runner with no OS label (`runs-on: [self-hosted]`) is likewise undetermined, because it can be any platform; `self-hosted` alongside a `linux`, `ubuntu` or `macos` label is analysed as bash.
-- **Shell shapes not matched**, reported as `DIES` or not at all: command substitution in command position (`$(echo "$V") --flag`, backticks), `set -- $V` followed by `"$@"`, `awk` with `system()`, and `eval` or a shell reached through a variable (`CMD=eval; $CMD "$V"`, `$SHELL -c "$V"`, `"$(command -v bash)" -c "$V"`). The fixtures `tests/fixtures/workflows/gap_*.yml` pin these and the eleven shapes below as known gaps, so adding a pattern means removing a line here.
+- **The only untrusted source is a `${{ }}` expression.** A value read inside `github-script` through `context.payload.*`, or in a shell with `jq` on `$GITHUB_EVENT_PATH`, starts no chain.
+- Line numbers inside folded (`>`) scalars and multi-line quoted strings are approximate; block (`|`) scalars and plain scalars are exact.
+
+<details>
+<summary>Seventeen shell shapes that are not matched, each pinned by a fixture</summary>
+
+- **Shell shapes not matched**, reported as `DIES` or not at all: command substitution in command position (`$(echo "$V") --flag`, backticks), `set -- $V` followed by `"$@"`, `awk` with `system()`, and `eval` or a shell reached through a variable (`CMD=eval; $CMD "$V"`, `$SHELL -c "$V"`, `"$(command -v bash)" -c "$V"`).
 - A `for`/`while`/`until`/`if` block written on one line with its redirect (`for k in a b; do echo "k=$V"; done >> "$GITHUB_OUTPUT"`) is not tracked as a block; only the form spanning more than one line is.
 - A `case ... esac >> "$GITHUB_OUTPUT"` block is not tracked: the redirect on `esac` is not carried into the pattern bodies.
 - A `done` or `fi` whose redirect sits on a continuation line (`done \` then `>> "$GITHUB_OUTPUT"`) is not tracked; a continuation on the closing line is joined only for `{ }` and `( )` groups.
@@ -111,10 +212,12 @@ Shell text is matched line by line with quotes and comments understood: single-q
 - A redirect after `deno run -` (`| deno run - 2>&1`, `| deno run - > out.txt`) is not matched; the same redirect after `python3 -`, `node -` or `php` is.
 - A program string that names the variable on a line that also opens a heredoc (`cat <<EOF | python3 -c '...os.environ["V"]...'`) is not matched by name; the heredoc body itself is still followed.
 - An interpreter flag whose argument is a separate word (`node --require ts-node/register`, `php -d display_errors=1`; `-W`, `-X` and `-r` excepted), a flag ending in a digit (`ruby -W0`, `python3 -O2`) or a bare `--` before standard input is reported as a value use; the one-word form (`--require=ts-node/register`) is matched.
-- **The only untrusted source is a `${{ }}` expression.** A value read inside `github-script` through `context.payload.*`, or in a shell with `jq` on `$GITHUB_EVENT_PATH`, starts no chain.
-- Line numbers inside folded (`>`) scalars and multi-line quoted strings are approximate; block (`|`) scalars and plain scalars are exact.
 
-## Install and usage
+</details>
+
+Every shape in that list, and the two sources outside scope listed above (`context.payload` inside `github-script`, `jq` on `$GITHUB_EVENT_PATH`), has a fixture under `tests/fixtures/workflows/gap_*.yml` that pins the current behaviour: 19 fixtures, and the suite pins the count. Adding a pattern means removing its line here.
+
+## Usage reference
 
 ```bash
 pip install -e ".[dev]"      # or: pip install .
@@ -155,7 +258,21 @@ The resolver is injected: the default reads a local directory, the tests use ven
 
 ## Tests
 
-`707` tests, offline, in about two seconds. They cover every source in the list, every shell sink, the value uses that must die, the heredoc shapes with static and random delimiters (multi-line, three echoes, and 42 fixture layouts of a group into the runner file), every redirect and tee form as a target, the runner file reached through a variable or a descriptor, the deprecated `::set-output`, step and job output propagation, JavaScript and `github-script` outputs, composite recursion with inputs, defaults and outputs, the cycle and depth limits, the three JavaScript outcomes, docker, reusable workflows, script following with positional arguments, inherited shells and `runs-on` from a matrix or a mapping, non-bash shells that write the runner file, JavaScript outputs the manifest does not declare, `process.env` aliases, `php -r`, `deno eval`, `bun -e` and interpreters fed through a pipe, interpreter strings that name the variable, `uses:` references that try to leave the actions directory, every file the tool opens checked against its root with real symlinks, malformed input (not UTF-8, UTF-16, absurd nesting, empty, a list), the resolver miss path, the `on:` boolean trap, the CLI exit codes and JSON shape, shells and interpreters named by a full path or through `env`/`sudo`, more command positions (`env FOO=1`, `nohup`, `time`, `!`, after a pipe), pipes into an interpreter with a trailing redirect, flag or `-`, the sanitiser idiom that stays a value, a group closing with a continuation, a `case` pattern inside a subshell, a redirected `for`/`while`/`if` block, `|&`, a process substitution given to a shell, a self-hosted runner with no OS label, an interpreter's standard input followed by another pipe stage, a long flag or `-r module` before standard input, an arithmetic `((` in a redirected compound, a program string that names the variable after the value was piped in, the documented gaps (one fixture per listed gap shape, count pinned), and the README block against the demo.
+`707` tests, offline, in about two seconds. Among them:
+
+- every untrusted source, every shell sink and every value use that must die
+- 42 fixture layouts of a heredoc group written into the runner file
+- composite, JavaScript, docker and reusable-workflow resolution, with the cycle and depth limits
+- every file the tool opens checked against its root, with real symlinks
+- the 19 documented gaps, one fixture each, count pinned
+- the demo block and the test badge in this README, checked by the suite itself
+
+<details>
+<summary>Full coverage list</summary>
+
+They cover every source in the list, every shell sink, the value uses that must die, the heredoc shapes with static and random delimiters (multi-line, three echoes, and 42 fixture layouts of a group into the runner file), every redirect and tee form as a target, the runner file reached through a variable or a descriptor, the deprecated `::set-output`, step and job output propagation, JavaScript and `github-script` outputs, composite recursion with inputs, defaults and outputs, the cycle and depth limits, the three JavaScript outcomes, docker, reusable workflows, script following with positional arguments, inherited shells and `runs-on` from a matrix or a mapping, non-bash shells that write the runner file, JavaScript outputs the manifest does not declare, `process.env` aliases, `php -r`, `deno eval`, `bun -e` and interpreters fed through a pipe, interpreter strings that name the variable, `uses:` references that try to leave the actions directory, every file the tool opens checked against its root with real symlinks, malformed input (not UTF-8, UTF-16, absurd nesting, empty, a list), the resolver miss path, the `on:` boolean trap, the CLI exit codes and JSON shape, shells and interpreters named by a full path or through `env`/`sudo`, more command positions (`env FOO=1`, `nohup`, `time`, `!`, after a pipe), pipes into an interpreter with a trailing redirect, flag or `-`, the sanitiser idiom that stays a value, a group closing with a continuation, a `case` pattern inside a subshell, a redirected `for`/`while`/`if` block, `|&`, a process substitution given to a shell, a self-hosted runner with no OS label, an interpreter's standard input followed by another pipe stage, a long flag or `-r module` before standard input, an arithmetic `((` in a redirected compound, a program string that names the variable after the value was piped in, the documented gaps (one fixture per listed gap shape, count pinned), and the README block against the demo.
+
+</details>
 
 ```bash
 pytest
